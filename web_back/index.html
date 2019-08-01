@@ -137,7 +137,7 @@
     <script>
         // 入口函数
         $(function () {
-            // 需求 退出登录
+            //需求: 退出登录
             //1.给退出的a标签设置点击事件.
             $('.icon-tuichu').parent().on('click', function (e) {
                 e.preventDefault(); //阻止a标签的默认跳转
@@ -160,6 +160,24 @@
                     });
                 });
             });
+
+
+            //需求: 获取登录的用户的个人信息并显示.
+            //  1.一进到首页,就应该发送ajax请求,获取登录的用户的信息
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/admin/user/info',
+                success: function (backData) {
+                    if (backData.code == 200) {
+                        // ​2.把对应的信息显示在页面的对象标签上.
+                        $('.user_info>span').html('欢迎&nbsp;&nbsp;'+backData.data.nickname);
+                        $('.user_info>img').attr('src',backData.data.userPic);
+                        $('.user_center_link>img').attr('src',backData.data.userPic);
+                    }
+                }
+            });
+
+
         });
     </script>
 

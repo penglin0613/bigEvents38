@@ -140,7 +140,7 @@
             <td class="text-center">
                 <a href="javascript:editTr({&quot;id&quot;:&quot;1&quot;,&quot;slug&quot;:&quot;uncategorized&quot;,&quot;name&quot;:&quot;未分类&quot;});"
                     class="btn btn-info btn-xs">编辑</a>
-                <a href="javascript:deleteTr( 1 );" data-id="{{v.id}}" class="btn btn-danger btn-xs">删除</a>
+                <a href="#" data-id="{{v.id}}" class="btn btn-danger btn-xs btn-delete">删除</a>
             </td>
         </tr>
         {{/each}}
@@ -148,6 +148,7 @@
     <script>
         // 入口函数
         $(function () {
+            // 获取所有的文章分类并渲染, 封装成了一个函数
             function getCateData() {
                 $.ajax({
                     type: 'get',
@@ -161,6 +162,7 @@
                     }
                 });
             }
+            
             // 需求: 一进到页面显示所有的文章分类
             // 1.一进到文章分类页面,发送ajax请求, 获取所有的文章分类信息.
             getCateData();
@@ -195,6 +197,33 @@
                 //完成新增后,要手动的隐藏模态框
                 $('#addModal').modal('hide');
             });
+
+            // 需求:文章分类删除
+            // 1.把模板引擎中的删除按钮自带的点击事件给删除,因为我们要自己来写.
+            // 2.删除按钮是动态生成的,所以要委托注册.
+            $('tbody').on('click', 'a.btn-delete', function () {
+                if (confirm('你确定要删除吗?')) {
+                    // 3.通过点击的当前删除按钮的自定义属性data-id,获取你要删除的文章类型的id
+                    var id = $(this).attr('data-id');
+                    //console.log(id);
+                    // 4.发送ajax请求完成删除
+                    $.ajax({
+                        type: 'post',
+                        url: 'http://localhost:8080/admin/category/delete',
+                        data: {
+                            id: id
+                        },
+                        success: function (backData) {
+                            if (backData.code == 204) {
+                                // ​ 4.1重新渲染数据
+                                getCateData();
+                            }
+                        }
+                    });
+                }
+            });
+
+
 
 
         });

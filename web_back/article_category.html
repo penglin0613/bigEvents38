@@ -80,6 +80,7 @@
         </div>
     </div>
 
+    <!-- 模态框 -->
     <div class="modal fade" id="addModal">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -95,7 +96,7 @@
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label">分类别名:</label>
-                            <input type="text" class="form-control" id="recipient-name">
+                            <input type="text" class="form-control" id="recipient-slug">
                         </div>
                     </form>
                 </div>
@@ -118,10 +119,7 @@
             $('#addModal').modal('hide');
         });
 
-        $('#model_add').click(function () {
-            alert('add');
-            $('#addModal').modal('hide');
-        });
+
 
         $('.category_table').delegate('a', 'click', function () {
             if ($(this).hasClass('btn-info')) {
@@ -150,18 +148,52 @@
     <script>
         // 入口函数
         $(function () {
+            function getCateData() {
+                $.ajax({
+                    type: 'get',
+                    url: 'http://localhost:8080/admin/category/list',
+                    success: function (backData) {
+                        console.log(backData);
+                        // 2.把这些文章分类信息, 通过模板引擎渲染到页面上.
+                        //调用模板引擎核心方法.
+                        var resHtml = template('tmp_artCate', backData);
+                        $('tbody').html(resHtml);
+                    }
+                });
+            }
             // 需求: 一进到页面显示所有的文章分类
             // 1.一进到文章分类页面,发送ajax请求, 获取所有的文章分类信息.
-            $.ajax({
-                type: 'get',
-                url: 'http://localhost:8080/admin/category/list',
-                success: function (backData) {
-                    console.log(backData);
-                    // 2.把这些文章分类信息, 通过模板引擎渲染到页面上.
-                    //调用模板引擎核心方法.
-                    var resHtml = template('tmp_artCate',backData);
-                    $('tbody').html(resHtml);
-                }
+            getCateData();
+
+
+            // 需求:完成文章类别新增
+            // 1.找到模态框中的 新增按钮 , 给他设置一个点击事件.
+            $('#model_add').on('click', function () {
+                // 2.获取用户输入的文章类别和文章类别别名.
+                var cateName = $('#recipient-name').val();
+                var slugName = $('#recipient-slug').val();
+                // 3.发送ajax请求,完成新增
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8080/admin/category/add',
+                    data: {
+                        name: cateName,
+                        slug: slugName
+                    },
+                    success: function (backData) {
+                        if (backData.code == 201) {
+                            alert('新增成功!');
+                        }
+                        //新增成功后,重新发送ajax请求,渲染新的数据.
+                        getCateData();
+                        //新增成功后把文本输入框中的内容给清空
+                        $('#recipient-name').val("");
+                        $('#recipient-slug').val("");
+                    }
+                });
+
+                //完成新增后,要手动的隐藏模态框
+                $('#addModal').modal('hide');
             });
 
 

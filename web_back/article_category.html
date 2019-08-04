@@ -72,7 +72,8 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success" data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success" id="xinZengFenLei" data-toggle="modal"
+                                data-target="#addModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -90,13 +91,18 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <!-- 给模态框新增一个 文本输入框, 这个文本输入框用来保存id -->
+                        <!-- 隐藏域 -->
+                        <input type="hidden" name="id"  id="cateId">
+                        <!-- <input type="text" style="display: none" id="cateId"> -->
+
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">分类名称:</label>
-                            <input type="text" class="form-control" id="recipient-name">
+                            <input type="text" class="form-control" name="name" id="recipient-name">
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label">分类别名:</label>
-                            <input type="text" class="form-control" id="recipient-slug">
+                            <input type="text" class="form-control" name="slug" id="recipient-slug">
                         </div>
                     </form>
                 </div>
@@ -118,15 +124,6 @@
             alert('shutoff');
             $('#addModal').modal('hide');
         });
-
-
-
-        $('.category_table').delegate('a', 'click', function () {
-            if ($(this).hasClass('btn-info')) {
-                $('#addModal .modal-title').html('修改分类名称');
-                $('#addModal').modal('show');
-            }
-        })
     </script>
 
     <!-- 导入模板引擎js文件 -->
@@ -138,8 +135,7 @@
             <td>{{v.name}}</td>
             <td>{{v.slug}}</td>
             <td class="text-center">
-                <a href="javascript:editTr({&quot;id&quot;:&quot;1&quot;,&quot;slug&quot;:&quot;uncategorized&quot;,&quot;name&quot;:&quot;未分类&quot;});"
-                    class="btn btn-info btn-xs">编辑</a>
+                <a href="#" data-id="{{v.id}}" class="btn btn-info btn-xs">编辑</a>
                 <a href="#" data-id="{{v.id}}" class="btn btn-danger btn-xs btn-delete">删除</a>
             </td>
         </tr>
@@ -162,41 +158,107 @@
                     }
                 });
             }
-            
+
             // 需求: 一进到页面显示所有的文章分类
             // 1.一进到文章分类页面,发送ajax请求, 获取所有的文章分类信息.
             getCateData();
 
 
             // 需求:完成文章类别新增
-            // 1.找到模态框中的 新增按钮 , 给他设置一个点击事件.
+            // 1.找到模态框中的 新增/修改 按钮 , 给他设置一个点击事件.
             $('#model_add').on('click', function () {
-                // 2.获取用户输入的文章类别和文章类别别名.
-                var cateName = $('#recipient-name').val();
-                var slugName = $('#recipient-slug').val();
-                // 3.发送ajax请求,完成新增
-                $.ajax({
-                    type: 'post',
-                    url: 'http://localhost:8080/admin/category/add',
-                    data: {
-                        name: cateName,
-                        slug: slugName
-                    },
-                    success: function (backData) {
-                        if (backData.code == 201) {
-                            alert('新增成功!');
-                        }
-                        //新增成功后,重新发送ajax请求,渲染新的数据.
-                        getCateData();
-                        //新增成功后把文本输入框中的内容给清空
-                        $('#recipient-name').val("");
-                        $('#recipient-slug').val("");
-                    }
-                });
+                //先判断一下到底点的是新增还是修改. 可以通过该按钮是否拥有btn-success类来判断,毕竟修改状态下拥有这个类.
+                if ($(this).hasClass('btn-success')) {
+                    //说明点击的是修改
+                    //1.获取模态框中的id,修改后的分类名和分类别名.
+                    // var cateId = $('#cateId').val(); //id名
+                    // var cateName = $('#recipient-name').val(); //分类名
+                    // var slugName = $('#recipient-slug').val(); //分类别名
+                    //上面的三句代码一个个的获取值没有问题,但是有些麻烦,比如不是三个而是三十个.
+                    //所以我们可以用formData一次性获取, 但是用formData传递数据后端一定要接收才行.
+                    //如果后端没有说用formData接收,那难道就只能一个个的获取值了吗?
+                    //不是的,贴心的jQuery给我们提供了一个方法 serialize(); //序列化
+                    var data = $('form').serialize();//可以获取form表单中带有name属性的标签的值
 
-                //完成新增后,要手动的隐藏模态框
+                    //console.log(cateId,cateName,slugName);
+                    //2.发送ajax请求,完成修改
+                    $.ajax({
+                        type: 'post',
+                        url: 'http://localhost:8080/admin/category/edit',
+                        // data: {
+                        //     id: cateId,
+                        //     name: cateName,
+                        //     slug: slugName
+                        // },
+                        data:data,
+                        success: function (backData) {
+                            if (backData.code == 200) {
+                                alert('修改成功');
+                                //3.修改后的新数据重新渲染一下.
+                                getCateData();
+                            }
+                        }
+                    });
+
+                } else {
+                    //说明点击的是新增
+                    // 2.获取用户输入的文章类别和文章类别别名.
+                    var cateName = $('#recipient-name').val();
+                    var slugName = $('#recipient-slug').val();
+                    // 3.发送ajax请求,完成新增
+                    $.ajax({
+                        type: 'post',
+                        url: 'http://localhost:8080/admin/category/add',
+                        data: {
+                            name: cateName,
+                            slug: slugName
+                        },
+                        success: function (backData) {
+                            if (backData.code == 201) {
+                                alert('新增成功!');
+                            }
+                            //新增成功后,重新发送ajax请求,渲染新的数据.
+                            getCateData();
+                            //新增成功后把文本输入框中的内容给清空
+                            $('#recipient-name').val("");
+                            $('#recipient-slug').val("");
+                        }
+                    });
+
+                }
+                //完成新增/修改后,要手动的隐藏模态框
                 $('#addModal').modal('hide');
             });
+
+
+
+            //需求: 给编辑按钮们设置点击事件.
+            $('tbody').on('click', 'a.btn-info', function () {
+                //修改弹出来的模态框的样式(title文本,确认按钮文本,确认文本的颜色);
+                $('#addModal .modal-title').html('修改分类');
+                $('#model_add').text('修改').addClass('btn-success');
+
+                var cateId = $(this).attr('data-id'); //获取当前编辑按钮自定义属性data-id中保存的 当前文章类别的id.
+                var cateName = $(this).parent().prev().prev().text(); //获取到了文章类别名
+                var cateSlug = $(this).parent().prev().text(); //获取到了文章分类别名
+                //把获取到的文章分类名和文章分类别名显示在模块框中
+                $('#recipient-name').val(cateName);
+                $('#recipient-slug').val(cateSlug);
+                $('#cateId').val(cateId);
+
+
+                $('#addModal').modal('show'); //显示模态框.
+            })
+
+            //给新增分类按钮设置点击事件.
+            $('#xinZengFenLei').on('click', function () {
+                //修改弹出来的模态框的样式(title文本,确认按钮文本,确认文本的颜色);
+                $('#addModal .modal-title').html('新增分类');
+                $('#model_add').text('新增').removeClass('btn-success');
+            });
+
+
+
 
             // 需求:文章分类删除
             // 1.把模板引擎中的删除按钮自带的点击事件给删除,因为我们要自己来写.
@@ -222,6 +284,8 @@
                     });
                 }
             });
+
+
 
 
 

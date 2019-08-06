@@ -30,9 +30,9 @@
                             <option>爱旅行</option>
                         </select>
                         <select id="selStatus" name="" class="form-control input-sm">
-                            <option>所有状态</option>
-                            <option value="drafted">草稿</option>
-                            <option value="published">已发布</option>
+                            <option value="">所有状态</option>
+                            <option value="草稿">草稿</option>
+                            <option value="已发布">已发布</option>
                         </select>
                         <button id="btnSearch" class="btn btn-default btn-sm">筛选</button>
                     </form>
@@ -270,13 +270,20 @@
 
     <!-- 导入模板引擎js文件. -->
     <script src="./js/template-web.js"></script>
-    <!-- 准备一个模板 -->
+    <!-- 准备一个文章类别模板 -->
+    <script id="article_cate" type="text/html">
+        <option value="">所有分类</option>
+        {{each data v}}
+        <option value="{{v.id}}">{{v.name}}</option>
+        {{/each}}
+    </script>
+    <!-- 准备一个文章列表模板 -->
     <script id="article_list" type="text/html">
         {{each data.data v}}
         <tr>
             <td>{{v.title}}</td>
             <td>{{v.author}}</td>
-            <td>{{v.categoryName}}</td>
+            <td>{{v.category}}</td>
             <td class="text-center">{{v.date}}</td>
             <td class="text-center">{{v.state}}</td>
             <td class="text-center">
@@ -294,16 +301,46 @@
 
         //入口函数
         $(function () {
-            //声明一个全局变量,用来记录所有的文章类别
-            var cateObjArr = null;
-            //需求: 一进来这个文章列表页面 就通过发送ajax获取所有的文章类别.
+            //需求: 一进到页面获取所有的文章分类,通过模板引擎渲染到 所有分类 下拉菜单里
             $.ajax({
-                type:'get',
-                url:'http://localhost:8080/admin/category/list',
-                success:function(backData){
-                    console.log(backData);   
-                    cateObjArr = backData.data; //这是一个数组,数组里面的元素是一个个对象
+                type: 'get',
+                url: 'http://localhost:8080/admin/category/list',
+                success: function (backData) {
+                    console.log(backData);
+                    // 2.把这些文章分类信息, 通过模板引擎渲染到页面上.
+                    //调用模板引擎核心方法.
+                    var resHtml = template('article_cate', backData);
+                    $('#selCategory').html(resHtml);
                 }
+            });
+
+            //需求: 点击筛选按钮,筛选出符合条件(文章分类和文章状态)的文章
+            //1.给按钮设置点击事件.
+            $('#btnSearch').on('click', function (e) {
+                e.preventDefault();
+                //2.获取下拉菜单中选中的文章分类和文章状态.
+                //  修改一下文章状态那个下拉菜单中的option项的value值
+                var artiCate = $('#selCategory').val();
+                var artiState = $('#selStatus').val();
+                console.log(artiCate, artiState);
+                //3.发送ajax请求
+                $.ajax({
+                    type: 'get',
+                    url: 'http://localhost:8080/admin/article/query',
+                    data:{
+                        type:artiCate,
+                        state:artiState
+                    },
+                    success: function (backData) {
+                        if (backData.code == 200) {
+                            //console.log(backData);
+
+                            //2.把返回的数据通过模板引擎渲染到页面上.
+                            var resHtml = template('article_list', backData);
+                            $('tbody').html(resHtml);
+                        }
+                    }
+                });
             });
 
 
@@ -312,30 +349,18 @@
             $.ajax({
                 type: 'get',
                 url: 'http://localhost:8080/admin/article/query',
-                data: {
-                    state: '已发布'
-                },
                 success: function (backData) {
                     if (backData.code == 200) {
-                        //遍历处理backData.data.data
-                        for(var i = 0; i<backData.data.data.length;i++){
-                            for(var j = 0; j<cateObjArr.length;j++){
-                                //判断
-                                if(backData.data.data[i].categoryId == cateObjArr[j].id ){
-                                    //如果相等的话,就取这个分类的名字,添加到backData中去
-                                    backData.data.data[i].categoryName = cateObjArr[j].name;
-                                    break;
-                                }
-                            }
-                        }
-                        console.log(backData);
-                        
+                        //console.log(backData);
+
                         //2.把返回的数据通过模板引擎渲染到页面上.
                         var resHtml = template('article_list', backData);
                         $('tbody').html(resHtml);
                     }
                 }
             });
+
+
 
         });
     </script>

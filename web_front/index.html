@@ -215,12 +215,50 @@
             <span>|</span>
             <a href="#">招聘人才</a>
             <span>|</span>
-            <a href="#">友情链接</a>		
+            <a href="#">友情链接</a>
         </div>
-        <p>CopyRight © 2019 深圳大事件信息技术股份有限公司   All Rights Reserved</p>
-        <p>电话：0755-****888    粤ICP备*******8号</p>
+        <p>CopyRight © 2019 深圳大事件信息技术股份有限公司 All Rights Reserved</p>
+        <p>电话：0755-****888 粤ICP备*******8号</p>
     </div>
 
+    <script src="./js/jquery-1.12.4.min.js"></script>
+    <script src="./js/template-web.js"></script>
+    <!-- 准备焦点新闻模板 -->
+    <script id="news" type="text/html">
+        {{each data.data}}
+            {{if $index == 0}}
+                <li class="first">
+            {{else}}
+                <li>
+            {{/if}}
+                    <a href="./article.html?id={{$value.id}}"><img src="{{$value.cover}}" alt=""></a>
+                    <p>{{$value.title}}</p>
+                 </li>
+        {{/each}}
+    </script>
+    <script>
+        // 入口函数
+        $(function () {
+            //需求 :一进页面就显示最新的5篇文章.
+            //1.一进到页面发送ajax请求,获取最新的5篇文章
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/admin/article/query',
+                data: {
+                    page: 1,
+                    perpage: 5
+                },
+                success: function (backData) {
+                    console.log(backData);
+                    //2.通过模板引擎渲染
+                    if (backData.code == 200) {
+                        var resHtml = template('news',backData);
+                        $('.focus_list').html(resHtml);
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

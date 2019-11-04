@@ -27,20 +27,20 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章标题：</label>
                     <div class="col-sm-10">
-                        <input type="email" class="form-control" id="inputEmail3" value="文章标题文字">
+                        <input type="email" name="title" class="form-control title" id="inputEmail3" value="文章标题文字">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputPassword3" class="col-sm-2 control-label">文章封面：</label>
                     <div class="col-sm-10">
                         <img src="images/pic06.jpg" class="article_cover">
-                        <input type="file" id="exampleInputFile">
+                        <input type="file" name="cover" id="exampleInputFile">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章类别：</label>
                     <div class="col-sm-4">
-                        <select class="form-control">
+                        <select name="categoryId" class="form-control category">
                             <option>类别一</option>
                             <option>类别二</option>
                             <option>类别三</option>
@@ -54,7 +54,7 @@
                     <div class="col-sm-4">
 
                         <div class="input-group">
-                            <input type="text" class="form-control" value="2019-05-17" id="dateinput">
+                            <input type="text" name="date" class="form-control date" value="2019-05-17" id="dateinput">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button"
                                     onclick="jeDate('#dateinput',{trigger:false,format: 'YYYY-MM-DD'})"><i
@@ -66,17 +66,105 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" id="rich_content" name="content" placeholder="文章内容" value="文章内容">
+                        <input type="text" class="form-control" id="rich_content"  placeholder="文章内容"
+                            value="文章内容">
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success">修改</button>
+                        <button type="submit" class="btn btn-success btn-edit">修改</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- 引入模板引擎js文件 -->
+    <script src="./js/template-web.js"></script>
+    <!-- 准备一个文章类别模板 -->
+    <script id="article_cate" type="text/html">
+        {{each data v}}
+        <option value="{{v.id}}">{{v.name}}</option>
+        {{/each}}
+    </script>
+    <script>
+        // 入口函数
+        $(function () {
+            //一进到页面,获取所有的文章类别
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/admin/category/list',
+                success: function (backData) {
+                    console.log(backData);
+                    // 2.把这些文章分类信息, 通过模板引擎渲染到页面上.
+                    //调用模板引擎核心方法.
+                    var resHtml = template('article_cate', backData);
+                    $('.category').html(resHtml);
+                }
+            });
+
+
+            //需求: 获取从列表页 传递过来的文章id,根据id获取当前文章的所有信息,显示在对应的标签中.
+            var id = window.location.search.split('=')[1];
+            console.log(id);
+            //根据id获取当前文章的所有信息
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/admin/article/search',
+                data: {
+                    id: id
+                },
+                success: function (backData) {
+                    if (backData.code == 200) {
+                        //显示在对应的标签中.
+                        $('input.title').val(backData.data.title);
+
+                        $('.article_cover').attr('src', backData.data.cover);
+
+                        $('select.category').val(backData.data.categoryId);
+
+                        $('input.date').val(backData.data.date);
+
+                        //设置富文本编辑器值得时候,要等到富文本编辑器渲染出来之后才行.
+                        // setTimeout(function () {
+                        //     tinyMCE.activeEditor.setContent('呵呵');
+                        // }, 500);
+
+                        //给文章内容的input标签设置value值.
+                        $('#rich_content').val(backData.data.content);
+
+
+                    }
+                }
+            });
+
+
+            //需求:修改完成
+            //1.给修改按钮设置点击事件.
+            $('.btn-edit').on('click', function (e) {
+                e.preventDefault();
+                //2.创建formData,获取值
+                var fd = new FormData($('form')[0]);
+                //3.修改的文章内容还有文章id要追加到formData中去
+                fd.append('id', id);
+                fd.append('content', tinyMCE.activeEditor.getContent());
+                //3.发送ajax请求,完成修改
+                $.ajax({
+                    type:'post',
+                    url:'http://localhost:8080/admin/article/edit',
+                    data:fd,
+                    contentType:false,
+                    processData:false,
+                    success:function(backData){
+                        if(backData.code == 200){
+                            alert('修改成功!');
+                        }
+                    }
+                });
+            })
+
+        });
+    </script>
 
 </body>
 
